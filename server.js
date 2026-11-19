@@ -31,15 +31,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+const SQL_SELECT_INVITADOS = `
+  SELECT id, nombre, contacto, confirmado,
+         TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
+  FROM invitados
+`;
+
 // READ (todos): Página principal
 app.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT id, nombre, contacto, confirmado,
-             TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
-      FROM invitados
-      ORDER BY id DESC
-    `);
+    const result = await pool.query(`${SQL_SELECT_INVITADOS} ORDER BY id DESC`);
     res.render('index', { invitados: result.rows });
   } catch (err) {
     console.error('Error al consultar invitados:', err);
@@ -50,11 +51,7 @@ app.get('/', async (req, res) => {
 // READ (todos con tabla de consulta, filtros y conteo)
 app.get('/consultar', async (req, res) => {
   const filtro = req.query.filtro || 'todos'; // 'todos', 'si', 'no'
-  let sql = `
-    SELECT id, nombre, contacto, confirmado,
-           TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
-    FROM invitados
-  `;
+  let sql = SQL_SELECT_INVITADOS;
 
   if (filtro === 'si') {
     sql += ' WHERE confirmado = 1';
@@ -99,17 +96,11 @@ app.post('/invitados', async (req, res) => {
   }
 });
 
-// READ (uno): Consultar un invitado por ID (para el modal)
+// READ (uno): Consultar un invitado por ID (para el modal o edición)
 app.get('/invitados/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query(`
-      SELECT id, nombre, contacto, confirmado,
-             TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
-      FROM invitados
-      WHERE id = $1
-    `, [id]);
-
+    const result = await pool.query(`${SQL_SELECT_INVITADOS} WHERE id = $1`, [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Invitado no encontrado' });
     }
@@ -119,6 +110,49 @@ app.get('/invitados/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al consultar el invitado' });
   }
 });
+
+// UPDATE: Editar nombre, contacto y confirmación de un invitado
+async function actualizarInvitado(req, res) {
+  const { id } = req.params;
+  const { nombre, contacto, confirmado } = req.body;
+  const origen = req.body.origen || '/consultar';
+  const estadoConfirmado = String(confirmado) === '0' ? 0 : 1;
+
+  if (!nombre || !contacto) {
+    if (req.method === 'PUT') {
+      return res.status(400).json({ error: 'Nombre y contacto son obligatorios' });
+    }
+    return res.status(400).send('Nombre y contacto son obligatorios');
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE invitados SET nombre = $1, contacto = $2, confirmado = $3 WHERE id = $4 RETURNING *',
+      [nombre.trim(), contacto.trim(), estadoConfirmado, id]
+    );
+
+    if (result.rowCount === 0) {
+      if (req.method === 'PUT') {
+        return res.status(404).json({ error: 'Invitado no encontrado' });
+      }
+      return res.status(404).send('Invitado no encontrado');
+    }
+
+    if (req.method === 'PUT') {
+      return res.json({ mensaje: 'Invitado actualizado', invitado: result.rows[0] });
+    }
+    res.redirect(origen);
+  } catch (err) {
+    console.error('Error al actualizar el invitado:', err);
+    if (req.method === 'PUT') {
+      return res.status(500).json({ error: 'Error al actualizar el invitado' });
+    }
+    res.status(500).send('Error al actualizar el invitado');
+  }
+}
+
+app.post('/invitados/:id/editar', actualizarInvitado);
+app.put('/invitados/:id', actualizarInvitado);
 
 // DELETE: Eliminar un invitado y regresar a la vista de origen
 async function eliminarInvitado(req, res) {

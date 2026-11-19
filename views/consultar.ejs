@@ -52,10 +52,24 @@
                 </td>
                 <td><%= inv.fecha_registro %></td>
                 <td>
-                  <form action="/invitados/<%= inv.id %>/eliminar" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar a <%= inv.nombre %>?');">
-                    <input type="hidden" name="origen" value="/consultar?filtro=<%= filtro %>" />
-                    <button type="submit" class="btn-eliminar">Eliminar</button>
-                  </form>
+                  <div class="acciones-fila">
+                    <button
+                      type="button"
+                      class="btn-suave"
+                      onclick="editarInvitado(<%= inv.id %>, '/consultar?filtro=<%= filtro %>')"
+                    >
+                      Editar
+                    </button>
+                    <form
+                      class="form-inline"
+                      action="/invitados/<%= inv.id %>/eliminar"
+                      method="POST"
+                      onsubmit="return confirm('¿Seguro que deseas eliminar a <%= inv.nombre %>?');"
+                    >
+                      <input type="hidden" name="origen" value="/consultar?filtro=<%= filtro %>" />
+                      <button type="submit" class="btn-eliminar">Eliminar</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <% }); %>
@@ -75,5 +89,15 @@
       </table>
     </div>
   </div>
+
+  <dialog id="modal-invitado">
+    <div class="modal-header">
+      <h3 id="titulo-modal">Detalle del invitado</h3>
+      <button type="button" class="btn-cerrar-x" onclick="cerrarModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div id="contenido-modal"></div>
+  </dialog>
+
+  <script src="/js/modal.js"></script>
 </body>
 </html>
