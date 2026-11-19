@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maison Belvedere — Confirmación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="contenedor-principal">
+    <div id="bienvenida" class="seccion">
+      <p class="firma-cursiva">Con mucho cariño</p>
+      <p class="subtitulo-sans">Cena de Celebración Privada</p>
+      <h1>Una noche para celebrar mi cumpleaños</h1>
+      <p class="lead-sans">Nos encantará recibirte en una cena íntima y elegante. Confirma tu lugar en el formulario.</p>
+    </div>
+
+    <div id="detalles" class="seccion">
+      <h2>Detalles de la Velada</h2>
+      <div class="lista-detalles">
+        <div class="dato-item">
+          <span class="dato-etiqueta">Fecha</span>
+          <span class="dato-valor">5 de Diciembre de 2026</span>
+        </div>
+        <div class="dato-item">
+          <span class="dato-etiqueta">Hora</span>
+          <span class="dato-valor">8:00 pm</span>
+        </div>
+        <div class="dato-item">
+          <span class="dato-etiqueta">Restaurante / Lugar</span>
+          <span class="dato-valor">Maison Belvedere</span>
+        </div>
+        <div class="dato-item">
+          <span class="dato-etiqueta">Etiqueta</span>
+          <span class="dato-valor">Formal / Etiqueta</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmacion" class="seccion">
+      <h2>Confirmación</h2>
+      <form id="form-invitado" action="/invitados" method="POST">
+        <div class="campo">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" placeholder="Nombre y apellido" required />
+        </div>
+        <div class="campo">
+          <label for="contacto">Teléfono o correo</label>
+          <input type="text" id="contacto" name="contacto" placeholder="33 0000 0000 o correo@ejemplo.com" required />
+        </div>
+        <div class="campo">
+          <label for="confirmado">Asistencia</label>
+          <select id="confirmado" name="confirmado">
+            <option value="1">Sí, asistiré</option>
+            <option value="0">No asistiré</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-principal">Confirmar lugar</button>
+      </form>
+    </div>
+
+    <div id="lista-invitados" class="seccion">
+      <h2>Invitados</h2>
+      <a href="/consultar" class="enlace-tabla">Abrir vista completa, filtros y conteo →</a>
+      <ul id="lista">
+        <% if (invitados && invitados.length > 0) { %>
+          <% invitados.forEach(function(inv) { %>
+            <li>
+              <div>
+                <span class="nombre-serif"><%= inv.nombre %></span>
+                <span class="contacto-sans"><%= inv.contacto %></span>
+                <span class="capsula <%= inv.confirmado === 1 ? 'capsula-si' : 'capsula-no' %>">
+                  <%= inv.confirmado === 1 ? 'Asistirá' : 'No asistirá' %>
+                </span>
+              </div>
+              <div class="acciones-fila">
+                <button type="button" class="btn-suave" onclick="verInvitado(<%= inv.id %>)">Consultar</button>
+                <form action="/invitados/<%= inv.id %>/eliminar" method="POST" class="form-inline">
+                  <button type="submit" class="btn-eliminar">Eliminar</button>
+                </form>
+              </div>
+            </li>
+          <% }); %>
+        <% } else { %>
+          <li><span class="contacto-sans">Aún no hay invitados registrados.</span></li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+
+  <dialog id="modal-invitado">
+    <div class="modal-header">
+      <h3>Detalle del Invitado</h3>
+      <button type="button" class="btn-cerrar-x" onclick="cerrarModal()">✕</button>
+    </div>
+    <div id="contenido-modal">
+      <p>Cargando...</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-suave" onclick="cerrarModal()">Cerrar</button>
+    </div>
+  </dialog>
+
+  <script src="/js/modal.js"></script>
+</body>
+</html>

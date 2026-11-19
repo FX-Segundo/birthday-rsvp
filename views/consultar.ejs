@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Listado de Invitados — Maison Belvedere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="contenedor-principal contenedor-principal--ancha">
+    <div class="barra-superior">
+      <div>
+        <p class="firma-cursiva">Lista de confirmaciones</p>
+        <h1>Invitados</h1>
+      </div>
+      <a href="/" class="btn-volver">← Volver a la invitación</a>
+    </div>
+
+    <div class="filtros">
+      <strong>Filtrar:</strong>
+      <a href="/consultar?filtro=todos" class="<%= filtro === 'todos' ? 'activo' : '' %>">Todos</a>
+      <a href="/consultar?filtro=si" class="<%= filtro === 'si' ? 'activo' : '' %>">Sí asistirán</a>
+      <a href="/consultar?filtro=no" class="<%= filtro === 'no' ? 'activo' : '' %>">No asistirán</a>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Asistencia</th>
+            <th>Fecha de registro</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (invitados && invitados.length > 0) { %>
+            <% invitados.forEach(function(inv) { %>
+              <tr>
+                <td><%= inv.id %></td>
+                <td><span class="nombre-serif"><%= inv.nombre %></span></td>
+                <td><%= inv.contacto %></td>
+                <td>
+                  <span class="capsula <%= inv.confirmado === 1 ? 'capsula-si' : 'capsula-no' %>">
+                    <%= inv.confirmado === 1 ? 'Asistirá' : 'No asistirá' %>
+                  </span>
+                </td>
+                <td><%= inv.fecha_registro %></td>
+                <td>
+                  <form action="/invitados/<%= inv.id %>/eliminar" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar a <%= inv.nombre %>?');">
+                    <input type="hidden" name="origen" value="/consultar?filtro=<%= filtro %>" />
+                    <button type="submit" class="btn-eliminar">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="celda-vacia">No hay registros para este filtro.</td>
+            </tr>
+          <% } %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6">
+              Total de invitados confirmados que sí asistirán: <%= totalConfirmados %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
