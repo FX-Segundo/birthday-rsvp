@@ -490,6 +490,17 @@ tfoot td {
   padding: 22px;
 }
 
+/* Mantener contacto, asistencia y fecha en una sola línea */
+table td:nth-child(3),
+table td:nth-child(4),
+table td:nth-child(5) {
+  white-space: nowrap;
+}
+
+table td:nth-child(3) {
+  min-width: 135px;
+}
+
 @media (max-width: 600px) {
   .contenedor-principal,
   .contenedor-principal--ancha {

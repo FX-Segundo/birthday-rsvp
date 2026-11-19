@@ -34,7 +34,12 @@ app.set('views', path.join(__dirname, 'views'));
 // READ (todos): Página principal
 app.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM invitados ORDER BY id DESC');
+    const result = await pool.query(`
+      SELECT id, nombre, contacto, confirmado,
+             TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
+      FROM invitados
+      ORDER BY id DESC
+    `);
     res.render('index', { invitados: result.rows });
   } catch (err) {
     console.error('Error al consultar invitados:', err);
@@ -45,7 +50,11 @@ app.get('/', async (req, res) => {
 // READ (todos con tabla de consulta, filtros y conteo)
 app.get('/consultar', async (req, res) => {
   const filtro = req.query.filtro || 'todos'; // 'todos', 'si', 'no'
-  let sql = 'SELECT * FROM invitados';
+  let sql = `
+    SELECT id, nombre, contacto, confirmado,
+           TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
+    FROM invitados
+  `;
 
   if (filtro === 'si') {
     sql += ' WHERE confirmado = 1';
@@ -94,7 +103,13 @@ app.post('/invitados', async (req, res) => {
 app.get('/invitados/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM invitados WHERE id = $1', [id]);
+    const result = await pool.query(`
+      SELECT id, nombre, contacto, confirmado,
+             TO_CHAR(fecha_registro AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mexico_City', 'DD/MM/YYYY HH24:MI') AS fecha_registro
+      FROM invitados
+      WHERE id = $1
+    `, [id]);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Invitado no encontrado' });
     }
