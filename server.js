@@ -1,17 +1,29 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const db = new sqlite3.Database(path.join(__dirname, 'invitados.db'), (err) => {
-  if (err) {
-    console.error('Error al abrir invitados.db:', err.message);
-  } else {
-    console.log('Servidor conectado a invitados.db');
-  }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')
+    ? { rejectUnauthorized: false }
+    : false
 });
+
+async function inicializarBD() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS invitados (
+      id SERIAL PRIMARY KEY,
+      nombre TEXT NOT NULL,
+      contacto TEXT NOT NULL,
+      confirmado INTEGER NOT NULL DEFAULT 1,
+      fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log('Servidor conectado a PostgreSQL y tabla invitados verificada');
+}
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -20,20 +32,20 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // READ (todos): Página principal
-app.get('/', (req, res) => {
-  db.all('SELECT * FROM invitados ORDER BY id DESC', [], (err, rows) => {
-    if (err) {
-      return res.status(500).send('Error al consultar invitados');
-    }
-    res.render('index', { invitados: rows });
-  });
+app.get('/', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM invitados ORDER BY id DESC');
+    res.render('index', { invitados: result.rows });
+  } catch (err) {
+    console.error('Error al consultar invitados:', err);
+    res.status(500).send('Error al consultar invitados');
+  }
 });
 
 // READ (todos con tabla de consulta, filtros y conteo)
-app.get('/consultar', (req, res) => {
+app.get('/consultar', async (req, res) => {
   const filtro = req.query.filtro || 'todos'; // 'todos', 'si', 'no'
   let sql = 'SELECT * FROM invitados';
-  const params = [];
 
   if (filtro === 'si') {
     sql += ' WHERE confirmado = 1';
@@ -42,26 +54,25 @@ app.get('/consultar', (req, res) => {
   }
   sql += ' ORDER BY id DESC';
 
-  // Consultamos tanto los registros filtrados como el total real de confirmados en la BD
-  db.all(sql, params, (err, rows) => {
-    if (err) {
-      return res.status(500).send('Error al consultar invitados');
-    }
-    db.get('SELECT COUNT(*) AS totalConfirmados FROM invitados WHERE confirmado = 1', [], (err2, countRow) => {
-      if (err2) {
-        return res.status(500).send('Error al contar confirmados');
-      }
-      res.render('consultar', {
-        invitados: rows,
-        filtro,
-        totalConfirmados: countRow.totalConfirmados
-      });
+  try {
+    const [listaRes, countRes] = await Promise.all([
+      pool.query(sql),
+      pool.query('SELECT COUNT(*)::int AS "totalConfirmados" FROM invitados WHERE confirmado = 1')
+    ]);
+
+    res.render('consultar', {
+      invitados: listaRes.rows,
+      filtro,
+      totalConfirmados: countRes.rows[0].totalConfirmados
     });
-  });
+  } catch (err) {
+    console.error('Error al consultar invitados:', err);
+    res.status(500).send('Error al consultar invitados');
+  }
 });
 
 // CREATE: Registrar un nuevo invitado
-app.post('/invitados', (req, res) => {
+app.post('/invitados', async (req, res) => {
   const { nombre, contacto, confirmado } = req.body;
   const estadoConfirmado = confirmado === '0' ? 0 : 1;
 
@@ -69,51 +80,61 @@ app.post('/invitados', (req, res) => {
     return res.status(400).send('Nombre y contacto son obligatorios');
   }
 
-  const sql = 'INSERT INTO invitados (nombre, contacto, confirmado) VALUES (?, ?, ?)';
-  db.run(sql, [nombre.trim(), contacto.trim(), estadoConfirmado], function (err) {
-    if (err) {
-      return res.status(500).send('Error al guardar el invitado');
-    }
+  const sql = 'INSERT INTO invitados (nombre, contacto, confirmado) VALUES ($1, $2, $3)';
+  try {
+    await pool.query(sql, [nombre.trim(), contacto.trim(), estadoConfirmado]);
     res.redirect('/');
-  });
+  } catch (err) {
+    console.error('Error al guardar el invitado:', err);
+    res.status(500).send('Error al guardar el invitado');
+  }
 });
 
 // READ (uno): Consultar un invitado por ID (para el modal)
-app.get('/invitados/:id', (req, res) => {
+app.get('/invitados/:id', async (req, res) => {
   const { id } = req.params;
-  db.get('SELECT * FROM invitados WHERE id = ?', [id], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error al consultar el invitado' });
-    }
-    if (!row) {
+  try {
+    const result = await pool.query('SELECT * FROM invitados WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Invitado no encontrado' });
     }
-    res.json(row);
-  });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error al consultar el invitado:', err);
+    res.status(500).json({ error: 'Error al consultar el invitado' });
+  }
 });
 
 // DELETE: Eliminar un invitado y regresar a la vista de origen
-function eliminarInvitado(req, res) {
+async function eliminarInvitado(req, res) {
   const { id } = req.params;
   const origen = req.body.origen || '/';
 
-  db.run('DELETE FROM invitados WHERE id = ?', [id], function (err) {
-    if (err) {
-      return res.status(500).send('Error al eliminar el invitado');
-    }
-    if (this.changes === 0) {
+  try {
+    const result = await pool.query('DELETE FROM invitados WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
       return res.status(404).send('Invitado no encontrado');
     }
     if (req.method === 'DELETE') {
       return res.json({ mensaje: 'Invitado eliminado', id: Number(id) });
     }
     res.redirect(origen);
-  });
+  } catch (err) {
+    console.error('Error al eliminar el invitado:', err);
+    res.status(500).send('Error al eliminar el invitado');
+  }
 }
 
 app.post('/invitados/:id/eliminar', eliminarInvitado);
 app.delete('/invitados/:id', eliminarInvitado);
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+inicializarBD()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Error al iniciar la base de datos:', err);
+    process.exit(1);
+  });
