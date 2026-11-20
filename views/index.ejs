@@ -69,7 +69,7 @@
         <% if (invitados && invitados.length > 0) { %>
           <% invitados.forEach(function(inv) { %>
             <li>
-              <div>
+              <div class="info-invitado">
                 <span class="nombre-serif"><%= inv.nombre %></span>
                 <span class="contacto-sans"><%= inv.contacto %></span>
                 <span class="capsula <%= inv.confirmado === 1 ? 'capsula-si' : 'capsula-no' %>">
@@ -105,9 +105,6 @@
     </div>
     <div id="contenido-modal">
       <p>Cargando...</p>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn-suave" onclick="cerrarModal()">Cerrar</button>
     </div>
   </dialog>
 

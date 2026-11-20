@@ -40,7 +40,7 @@ async function verInvitado(id) {
   }
 }
 
-async function editarInvitado(id, origen = '/consultar') {
+async function editarInvitado(id, origen = '/') {
   if (!modal || !contenidoModal) return;
 
   if (tituloModal) tituloModal.textContent = 'Editar invitado';

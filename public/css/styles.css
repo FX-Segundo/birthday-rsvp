@@ -53,7 +53,7 @@ body::before {
 .contenedor-principal {
   position: relative;
   z-index: 1;
-  max-width: 680px;
+  max-width: 780px;
   margin: 0 auto;
   background: var(--superficie);
   backdrop-filter: blur(8px);
@@ -241,6 +241,11 @@ button {
   color: var(--acento-oro);
 }
 
+.btn-lista-completa {
+  display: inline-block;
+  margin-bottom: 18px;
+}
+
 ul#lista {
   list-style: none;
   padding: 0;
@@ -251,7 +256,6 @@ ul#lista li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 12px;
   padding: 13px 0;
   border-bottom: 1px solid var(--linea-sutil);
@@ -262,18 +266,27 @@ ul#lista li:last-child {
   border-bottom: none;
 }
 
+.info-invitado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
 .nombre-serif {
   font-family: var(--fuente-serif);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--tinta);
+  white-space: nowrap;
 }
 
 .contacto-sans {
   font-family: var(--fuente-sans);
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--tinta-tenue);
-  margin-left: 6px;
+  white-space: nowrap;
 }
 
 /* Cápsulas de asistencia con tipografía sans limpia */
@@ -286,9 +299,9 @@ ul#lista li:last-child {
   letter-spacing: 0.04em;
   padding: 3px 10px;
   border-radius: 999px;
-  margin-left: 8px;
   line-height: 1.3;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .capsula-si {
@@ -306,7 +319,8 @@ ul#lista li:last-child {
 .acciones-fila {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .form-inline {
@@ -317,8 +331,10 @@ ul#lista li:last-child {
   background: transparent;
   color: var(--tinta);
   border: 1px solid rgba(26, 23, 20, 0.22);
-  padding: 6px 12px;
-  font-size: 10.5px;
+  padding: 6px 10px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
 .btn-suave:hover {
@@ -329,8 +345,10 @@ ul#lista li:last-child {
   background: transparent;
   color: var(--peligro);
   border: 1px solid rgba(139, 38, 38, 0.3);
-  padding: 6px 12px;
-  font-size: 10.5px;
+  padding: 6px 10px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
 .btn-eliminar:hover {
@@ -422,6 +440,7 @@ dialog::backdrop {
   padding: 8px 14px;
   border: 1px solid rgba(26, 23, 20, 0.22);
   border-radius: 2px;
+  white-space: nowrap;
 }
 
 .btn-volver:hover {
@@ -509,6 +528,13 @@ table td:nth-child(5) {
 
 table td:nth-child(3) {
   min-width: 135px;
+}
+
+@media (max-width: 720px) {
+  ul#lista li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 600px) {
