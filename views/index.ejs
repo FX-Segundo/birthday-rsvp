@@ -64,7 +64,7 @@
 
     <div id="lista-invitados" class="seccion">
       <h2>Invitados</h2>
-      <a href="/consultar" class="enlace-tabla">Abrir vista completa, filtros y conteo →</a>
+      <a href="/consultar" class="btn-volver btn-lista-completa">Abrir vista completa, filtros y conteo →</a>
       <ul id="lista">
         <% if (invitados && invitados.length > 0) { %>
           <% invitados.forEach(function(inv) { %>
@@ -78,7 +78,14 @@
               </div>
               <div class="acciones-fila">
                 <button type="button" class="btn-suave" onclick="verInvitado(<%= inv.id %>)">Consultar</button>
-                <form action="/invitados/<%= inv.id %>/eliminar" method="POST" class="form-inline">
+                <button type="button" class="btn-suave" onclick="editarInvitado(<%= inv.id %>, '/')">Editar</button>
+                <form
+                  action="/invitados/<%= inv.id %>/eliminar"
+                  method="POST"
+                  class="form-inline"
+                  onsubmit="return confirm('¿Seguro que deseas eliminar a <%= inv.nombre %>?');"
+                >
+                  <input type="hidden" name="origen" value="/" />
                   <button type="submit" class="btn-eliminar">Eliminar</button>
                 </form>
               </div>
@@ -93,8 +100,8 @@
 
   <dialog id="modal-invitado">
     <div class="modal-header">
-      <h3>Detalle del Invitado</h3>
-      <button type="button" class="btn-cerrar-x" onclick="cerrarModal()">✕</button>
+      <h3 id="titulo-modal">Detalle del Invitado</h3>
+      <button type="button" class="btn-cerrar-x" onclick="cerrarModal()" aria-label="Cerrar">✕</button>
     </div>
     <div id="contenido-modal">
       <p>Cargando...</p>
